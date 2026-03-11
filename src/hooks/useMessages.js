@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { getSocket } from '../services/socket.js'
 import { mockMessages } from '../data/mockMessages.js'
 
+const API_BASE = import.meta.env.VITE_API_URL || ''
 const MAX_MESSAGES = 20
 
 export function useMessages() {
@@ -26,8 +27,8 @@ export function useMessages() {
 
       // 히스토리 + 총 개수 병렬 로드
       Promise.all([
-        fetch('/api/messages?limit=20').then((r) => r.json()).catch(() => null),
-        fetch('/api/messages/count').then((r) => r.json()).catch(() => null),
+        fetch(`${API_BASE}/api/messages?limit=20`).then((r) => r.json()).catch(() => null),
+        fetch(`${API_BASE}/api/messages/count`).then((r) => r.json()).catch(() => null),
       ]).then(([data, countData]) => {
         if (countData?.count != null) setTotalCount(countData.count)
 
@@ -35,9 +36,6 @@ export function useMessages() {
           const sorted = data.reverse().slice(-MAX_MESSAGES)
           updateLastTimestamp(sorted)
           setMessages(sorted)
-        } else {
-          setMessages(mockMessages.slice(0, MAX_MESSAGES))
-          if (!countData?.count) setTotalCount(mockMessages.length)
         }
       })
     }
@@ -47,7 +45,7 @@ export function useMessages() {
     socket.on('connect', () => {
       setConnected(true)
       if (lastTimestampRef.current) {
-        fetch(`/api/messages?after=${encodeURIComponent(lastTimestampRef.current)}&limit=20`)
+        fetch(`${API_BASE}/api/messages?after=${encodeURIComponent(lastTimestampRef.current)}&limit=20`)
           .then((r) => r.json())
           .then((data) => {
             if (Array.isArray(data) && data.length > 0) {
@@ -78,11 +76,17 @@ export function useMessages() {
       setMessages((prev) => prev.filter((m) => m.id !== id))
     })
 
+    socket.on('all_messages_deleted', () => {
+      setMessages([])
+      setTotalCount(0)
+    })
+
     return () => {
       socket.off('connect')
       socket.off('disconnect')
       socket.off('new_message')
       socket.off('message_deleted')
+      socket.off('all_messages_deleted')
     }
   }, [])
 

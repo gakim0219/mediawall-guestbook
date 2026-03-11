@@ -21,3 +21,9 @@ export function broadcastDelete(id) {
     _io.of('/wall').emit('message_deleted', { id })
   }
 }
+
+export function broadcastDeleteAll() {
+  if (_io) {
+    _io.of('/wall').emit('all_messages_deleted')
+  }
+}

@@ -34,6 +34,10 @@ export function deleteMessage(id) {
   return db.prepare('DELETE FROM messages WHERE id = ?').run(id)
 }
 
+export function deleteAllMessages() {
+  return db.prepare('DELETE FROM messages').run()
+}
+
 export function getCount() {
   return db.prepare('SELECT COUNT(*) as count FROM messages').get().count
 }

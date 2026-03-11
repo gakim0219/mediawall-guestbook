@@ -87,6 +87,52 @@ function DeleteButton({ onConfirm }) {
   )
 }
 
+// ── 전체 삭제 버튼 ──────────────────────────────────────
+function DeleteAllButton({ onConfirm, count }) {
+  const [confirming, setConfirming] = useState(false)
+
+  if (count === 0) return null
+
+  if (confirming) {
+    return (
+      <div style={{ display: 'flex', gap: 6 }}>
+        <button
+          onClick={() => { onConfirm(); setConfirming(false) }}
+          style={{
+            padding: '6px 14px', borderRadius: 8, border: 'none',
+            background: 'rgba(239,68,68,0.8)', color: '#fff',
+            fontSize: 13, fontWeight: 700, cursor: 'pointer',
+            fontFamily: "'Noto Sans KR', sans-serif",
+          }}
+        >전체 삭제 확인</button>
+        <button
+          onClick={() => setConfirming(false)}
+          style={{
+            padding: '6px 10px', borderRadius: 8,
+            border: '1px solid rgba(255,255,255,0.15)',
+            background: 'transparent', color: '#94A3B8',
+            fontSize: 13, cursor: 'pointer',
+            fontFamily: "'Noto Sans KR', sans-serif",
+          }}
+        >취소</button>
+      </div>
+    )
+  }
+
+  return (
+    <button
+      onClick={() => setConfirming(true)}
+      style={{
+        padding: '6px 14px', borderRadius: 8,
+        border: '1px solid rgba(239,68,68,0.3)',
+        background: 'rgba(239,68,68,0.08)', color: 'rgba(239,68,68,0.7)',
+        fontSize: 13, cursor: 'pointer',
+        fontFamily: "'Noto Sans KR', sans-serif",
+      }}
+    >전체 삭제</button>
+  )
+}
+
 // ── 메시지 행 ────────────────────────────────────────────
 function MessageRow({ msg, onDelete, isNew }) {
   return (
@@ -283,9 +329,14 @@ export default function AdminForm() {
       setMessages((prev) => prev.filter((m) => m.id !== id))
       setTotalCount((n) => Math.max(0, n - 1))
     })
+    socket.on('all_messages_deleted', () => {
+      setMessages([])
+      setTotalCount(0)
+    })
     return () => {
       socket.off('connect'); socket.off('disconnect')
       socket.off('new_message'); socket.off('message_deleted')
+      socket.off('all_messages_deleted')
     }
   }, [isAuthenticated, loadMessages])
 
@@ -327,6 +378,17 @@ export default function AdminForm() {
       })
     } catch {
       alert('삭제 실패')
+    }
+  }
+
+  async function handleDeleteAll() {
+    try {
+      await fetch(`${API_BASE}/api/messages/all`, {
+        method: 'DELETE',
+        headers: { 'X-Ingest-Token': INGEST_TOKEN },
+      })
+    } catch {
+      alert('전체 삭제 실패')
     }
   }
 
@@ -497,6 +559,7 @@ export default function AdminForm() {
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 16 }}>
+          <DeleteAllButton onConfirm={handleDeleteAll} count={totalCount} />
           {!isMobile && (
             <a href="/wall" target="_blank" style={{
               padding: '7px 16px', borderRadius: 8,

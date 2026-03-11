@@ -1,8 +1,14 @@
 import { Router } from 'express'
-import { getMessages, getCount, deleteMessage } from '../db.js'
-import { broadcastDelete } from '../socket.js'
+import { getMessages, getCount, deleteMessage, deleteAllMessages } from '../db.js'
+import { broadcastDelete, broadcastDeleteAll } from '../socket.js'
 
 const router = Router()
+
+router.delete('/all', (req, res) => {
+  deleteAllMessages()
+  broadcastDeleteAll()
+  res.json({ ok: true })
+})
 
 router.delete('/:id', (req, res) => {
   const { id } = req.params

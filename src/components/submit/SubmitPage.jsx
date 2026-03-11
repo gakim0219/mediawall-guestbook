@@ -139,10 +139,10 @@ export default function SubmitPage() {
         }} />
 
         <p style={{
-          color: 'rgba(148,163,184,0.8)', fontSize: 14,
+          color: 'rgba(148,163,184,0.8)', fontSize: 18,
           letterSpacing: '0.12em', marginBottom: 12,
         }}>
-          故 정주영 현대그룹 회장
+          아산 정주영 창업자
         </p>
         <h1 style={{
           color: '#FFFFFF', fontSize: 22, fontWeight: 300,
@@ -205,7 +205,7 @@ export default function SubmitPage() {
               <textarea
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                placeholder="삼가 고인의 명복을 빕니다."
+                placeholder="도전과 개척의 정신, 정주영 회장님을 기억합니다."
                 maxLength={300}
                 required
                 rows={5}

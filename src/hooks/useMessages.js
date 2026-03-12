@@ -3,7 +3,7 @@ import { getSocket } from '../services/socket.js'
 import { mockMessages } from '../data/mockMessages.js'
 
 const API_BASE = import.meta.env.VITE_API_URL || ''
-const MAX_MESSAGES = 28
+const MAX_MESSAGES = 30
 
 export function useMessages() {
   const [messages, setMessages] = useState([])

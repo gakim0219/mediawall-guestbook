@@ -59,7 +59,7 @@ export default function WallScene() {
           height: WALL_H,
           position: 'relative',
           overflow: 'hidden',
-          backgroundImage: 'url(/background2.png)',
+          backgroundImage: 'url(/background3.jpg)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundColor: '#000a1e',

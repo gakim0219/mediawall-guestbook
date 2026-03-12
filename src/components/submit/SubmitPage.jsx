@@ -122,11 +122,11 @@ export default function SubmitPage() {
         maxWidth: 480,
       }}>
         <img
-          src="/CI_HD.png"
+          src="/HD_mono_white.png"
           alt="HD현대"
           style={{
             height: 36, objectFit: 'contain',
-            filter: 'brightness(0) invert(1) opacity(0.8)',
+            opacity: 0.8,
             marginBottom: 28,
           }}
           onError={(e) => { e.target.style.display = 'none' }}
@@ -141,14 +141,17 @@ export default function SubmitPage() {
         <p style={{
           color: 'rgba(148,163,184,0.8)', fontSize: 18,
           letterSpacing: '0.12em', marginBottom: 12,
+          fontFamily: "'HyundaiSans', 'Noto Sans KR', sans-serif",
+          fontWeight: 700,
         }}>
           아산 정주영 창업자
         </p>
         <h1 style={{
-          color: '#FFFFFF', fontSize: 22, fontWeight: 300,
+          color: '#FFFFFF', fontSize: 22, fontWeight: 500,
           letterSpacing: '0.1em', lineHeight: 1.5, marginBottom: 32,
+          fontFamily: "'HyundaiSans', 'Noto Sans KR', sans-serif",
         }}>
-          서거 25주기 추모 메시지
+          서거 25주기
         </h1>
       </div>
 
@@ -206,7 +209,7 @@ export default function SubmitPage() {
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 placeholder="도전과 개척의 정신, 정주영 회장님을 기억합니다."
-                maxLength={300}
+                maxLength={65}
                 required
                 rows={5}
                 style={{
@@ -222,7 +225,7 @@ export default function SubmitPage() {
                 }}
               />
               <div style={{ color: '#334155', fontSize: 12, textAlign: 'right', marginTop: 4 }}>
-                {text.length} / 300
+                {text.length} / 65
               </div>
             </div>
 

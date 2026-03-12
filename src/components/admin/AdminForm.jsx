@@ -429,7 +429,7 @@ export default function AdminForm() {
           <label style={{ color: '#64748B', fontSize: 13, display: 'block', marginBottom: 6 }}>메시지</label>
           <textarea
             value={text} onChange={(e) => setText(e.target.value)}
-            placeholder="삼가 고인의 명복을 빕니다." maxLength={500} required rows={5}
+            placeholder="도전과 개척의 정신, 정주영 회장님을 기억합니다" maxLength={65} required rows={5}
             style={{
               width: '100%', padding: '10px 14px',
               background: 'rgba(255,255,255,0.06)',
@@ -441,7 +441,7 @@ export default function AdminForm() {
             }}
           />
           <div style={{ color: '#334155', fontSize: 12, textAlign: 'right', marginTop: 3 }}>
-            {text.length} / 500
+            {text.length} / 65
           </div>
         </div>
         <button

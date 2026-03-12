@@ -37,7 +37,7 @@ const RIGHT_EXCLUDE_COLS = 1
 
 // ── 버블 간 최소 여백 ─────────────────────────────────────
 // getBBox를 이 값만큼 확장하여 버블 사이 강제 여백 확보
-const BUBBLE_GAP = 48
+const BUBBLE_GAP = 24
 
 // ── 겹침 허용 범위 ───────────────────────────────────────
 // BUBBLE_GAP으로 이미 여백이 확보되므로 추가 허용 없음
@@ -48,8 +48,8 @@ const OVERLAP_TOLERANCE = 0
 //   유효 구역: x=824~5992 (폭 5168px), 3행
 //   버블 실효폭 (GAP 포함): 758 + 96 = 854px
 //   행당 최대: 5168 / 854 ≈ 6개 → 쾌적 밀도 행당 3-4개
-//   3행 × 3.3 ≈ 10개 (여유있게 읽히는 밀도)
-const MAX_VISIBLE = 10
+//   3행 × 7 = 21개 (최대 가용), 20개로 제한 → 빽빽한 추모 메시지 느낌
+const MAX_VISIBLE = 20
 
 // ── 퇴장 애니메이션 시간 ──────────────────────────────────
 const EXIT_DURATION = 1500
@@ -118,8 +118,8 @@ function findBestPosition(col, row, existingBoxes) {
   let bestArea = Infinity
 
   for (let i = 0; i < MAX_TRIES; i++) {
-    const rawX = baseX + (Math.random() - 0.5) * ZONE_W * 0.45
-    const rawY = baseY + (Math.random() - 0.5) * ZONE_H * 0.40
+    const rawX = baseX + (Math.random() - 0.5) * ZONE_W * 0.7
+    const rawY = baseY + (Math.random() - 0.5) * ZONE_H * 0.6
     const { x, y } = clamp(rawX, rawY)
     const box = getBBox(x, y)
     const area = overlapArea(box, existingBoxes)

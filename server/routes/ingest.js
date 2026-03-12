@@ -21,7 +21,7 @@ router.post('/', (req, res) => {
     id: uuidv4(),
     senderName: String(senderName).slice(0, 50),
     avatarUrl: avatarUrl || null,
-    text: String(text).slice(0, 500),
+    text: String(text).slice(0, 65),
     timestamp: new Date().toISOString(),
     source: 'manual',
   }

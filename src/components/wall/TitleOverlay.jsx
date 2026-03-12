@@ -27,8 +27,8 @@ export default function TitleOverlay({ totalCount = 0 }) {
       }}>
         {/* 타이틀 */}
         <div style={{
-          fontFamily: "'Noto Sans KR', sans-serif",
-          fontWeight: 300,
+          fontFamily: "'HyundaiSans', 'Noto Sans KR', sans-serif",
+          fontWeight: 700,
           fontSize: 52,
           letterSpacing: '0.1em',
           color: '#FFFFFF',
@@ -38,15 +38,15 @@ export default function TitleOverlay({ totalCount = 0 }) {
           아산 정주영 창업자
         </div>
         <div style={{
-          fontFamily: "'Noto Sans KR', sans-serif",
-          fontWeight: 300,
+          fontFamily: "'HyundaiSans', 'Noto Sans KR', sans-serif",
+          fontWeight: 500,
           fontSize: 32,
           letterSpacing: '0.15em',
           color: 'rgba(200,220,240,0.8)',
           marginTop: 8,
           textShadow: '0 2px 12px rgba(0,0,0,0.8)',
         }}>
-          서거 25주기 추모 메시지
+          서거 25주기
         </div>
         <div style={{
           fontFamily: "'Noto Sans KR', sans-serif",
@@ -103,7 +103,7 @@ export default function TitleOverlay({ totalCount = 0 }) {
             }}>
               <QRCodeSVG
                 value={submitUrl}
-                size={300}
+                size={200}
                 bgColor="#ffffff"
                 fgColor="#000a1e"
                 level="M"

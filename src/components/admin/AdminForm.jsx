@@ -300,11 +300,20 @@ export default function AdminForm() {
   const windowWidth = useWindowWidth()
   const isMobile = windowWidth < 768
 
+  const [hasMore, setHasMore] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const PAGE_SIZE = 100
+
   const loadMessages = useCallback(() => {
-    fetch(`${API_BASE}/api/messages?limit=100`)
+    setHasMore(true)
+    fetch(`${API_BASE}/api/messages?limit=${PAGE_SIZE}`)
       .then((r) => r.json())
       .then((data) => {
-        if (Array.isArray(data)) setMessages(data.reverse())
+        if (Array.isArray(data)) {
+          const sorted = data.reverse()
+          setMessages(sorted)
+          if (data.length < PAGE_SIZE) setHasMore(false)
+        }
       })
       .catch(() => {})
     fetch(`${API_BASE}/api/messages/count`)
@@ -312,6 +321,23 @@ export default function AdminForm() {
       .then((d) => { if (d?.count != null) setTotalCount(d.count) })
       .catch(() => {})
   }, [])
+
+  const loadMore = useCallback(() => {
+    if (loadingMore || !hasMore) return
+    setLoadingMore(true)
+    fetch(`${API_BASE}/api/messages?limit=${PAGE_SIZE}&offset=${messages.length}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setMessages((prev) => [...prev, ...data.reverse()])
+          if (data.length < PAGE_SIZE) setHasMore(false)
+        } else {
+          setHasMore(false)
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingMore(false))
+  }, [loadingMore, hasMore, messages.length])
 
   useEffect(() => {
     if (!isAuthenticated) return
@@ -521,6 +547,23 @@ export default function AdminForm() {
               isNew={newIds.has(msg.id)}
             />
           ))
+        )}
+        {hasMore && !search && (
+          <button
+            onClick={loadMore}
+            disabled={loadingMore}
+            style={{
+              padding: '12px', borderRadius: 8,
+              border: '1px solid rgba(255,255,255,0.12)',
+              background: 'rgba(255,255,255,0.04)',
+              color: '#94A3B8', fontSize: 14,
+              cursor: loadingMore ? 'not-allowed' : 'pointer',
+              fontFamily: "'Noto Sans KR', sans-serif",
+              marginTop: 4,
+            }}
+          >
+            {loadingMore ? '불러오는 중...' : '이전 메시지 더 보기'}
+          </button>
         )}
       </div>
     </div>

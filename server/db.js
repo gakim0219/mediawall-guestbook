@@ -7,7 +7,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 
 let db
 const COLLECTION = 'messages'
-const COUNTER_DOC = 'meta_counter'
+const COUNTER_REF = () => db.collection('metadata').doc('counter')
 
 export function initDb() {
   let credential
@@ -35,16 +35,13 @@ export async function insertMessage(msg) {
     timestamp: msg.timestamp,
     source: msg.source || 'manual',
   })
-  batch.set(db.collection(COLLECTION).doc(COUNTER_DOC),
-    { count: admin.firestore.FieldValue.increment(1) },
-    { merge: true }
-  )
+  batch.set(COUNTER_REF(), { count: admin.firestore.FieldValue.increment(1) }, { merge: true })
   await batch.commit()
 }
 
-// ── 배치 쓰기 (최대 250건씩) ────────────────────────────────
+// ── 배치 쓰기 (최대 249건씩) ────────────────────────────────
 export async function insertMessages(msgs) {
-  const BATCH_LIMIT = 249 // 카운터 업데이트 1건 포함하여 250
+  const BATCH_LIMIT = 249
   for (let i = 0; i < msgs.length; i += BATCH_LIMIT) {
     const chunk = msgs.slice(i, i + BATCH_LIMIT)
     const batch = db.batch()
@@ -57,10 +54,7 @@ export async function insertMessages(msgs) {
         source: msg.source || 'manual',
       })
     }
-    batch.set(db.collection(COLLECTION).doc(COUNTER_DOC),
-      { count: admin.firestore.FieldValue.increment(chunk.length) },
-      { merge: true }
-    )
+    batch.set(COUNTER_REF(), { count: admin.firestore.FieldValue.increment(chunk.length) }, { merge: true })
     await batch.commit()
   }
 }
@@ -72,38 +66,31 @@ export async function deleteMessage(id) {
   if (!snap.exists) return { changes: 0 }
   const batch = db.batch()
   batch.delete(doc)
-  batch.set(db.collection(COLLECTION).doc(COUNTER_DOC),
-    { count: admin.firestore.FieldValue.increment(-1) },
-    { merge: true }
-  )
+  batch.set(COUNTER_REF(), { count: admin.firestore.FieldValue.increment(-1) }, { merge: true })
   await batch.commit()
   return { changes: 1 }
 }
 
 export async function deleteAllMessages() {
-  const snapshot = await db.collection(COLLECTION)
-    .where(admin.firestore.FieldPath.documentId(), '!=', COUNTER_DOC)
-    .get()
+  const snapshot = await db.collection(COLLECTION).get()
   const BATCH_LIMIT = 500
   for (let i = 0; i < snapshot.docs.length; i += BATCH_LIMIT) {
     const batch = db.batch()
     snapshot.docs.slice(i, i + BATCH_LIMIT).forEach((doc) => batch.delete(doc.ref))
     await batch.commit()
   }
-  // 카운터 리셋
-  await db.collection(COLLECTION).doc(COUNTER_DOC).set({ count: 0 })
+  await COUNTER_REF().set({ count: 0 })
   return { changes: snapshot.size }
 }
 
 // ── 조회 ────────────────────────────────────────────────────
 export async function getCount() {
-  const doc = await db.collection(COLLECTION).doc(COUNTER_DOC).get()
+  const doc = await COUNTER_REF().get()
   return doc.exists ? (doc.data().count || 0) : 0
 }
 
 export async function getMessages({ limit = 50, offset = 0, after } = {}) {
   let query = db.collection(COLLECTION)
-    .where(admin.firestore.FieldPath.documentId(), '!=', COUNTER_DOC)
 
   if (after) {
     query = query.where('timestamp', '>', after).orderBy('timestamp', 'asc')

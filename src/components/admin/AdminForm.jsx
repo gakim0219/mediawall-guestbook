@@ -146,17 +146,6 @@ function MessageRow({ msg, onDelete, isNew }) {
         transition: 'background 0.5s',
       }}
     >
-      {/* 아바타 */}
-      <div style={{
-        width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-        background: getAvatarColor(msg.senderName),
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 15, fontWeight: 700, color: '#fff',
-        fontFamily: "'Noto Sans KR', sans-serif",
-      }}>
-        {getInitial(msg.senderName)}
-      </div>
-
       {/* 내용 */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>

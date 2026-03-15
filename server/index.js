@@ -16,8 +16,13 @@ const PORT = process.env.PORT || 3001
 const app = express()
 const httpServer = createServer(app)
 
+const MAX_CONNECTIONS = 1000
+
 const io = new Server(httpServer, {
   cors: { origin: '*' },
+  pingInterval: 25000,
+  pingTimeout: 10000,
+  perMessageDeflate: true, // WebSocket 메시지 압축
 })
 
 app.use(cors())

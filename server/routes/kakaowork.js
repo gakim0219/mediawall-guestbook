@@ -18,7 +18,7 @@ function verifyHmac(req) {
   return sig === hmac
 }
 
-router.post('/webhook', (req, res) => {
+router.post('/webhook', async (req, res) => {
   if (!verifyHmac(req)) {
     return res.status(401).json({ error: 'Invalid signature' })
   }
@@ -29,7 +29,7 @@ router.post('/webhook', (req, res) => {
   }
 
   const msg = { ...canonical, id: uuidv4(), source: 'kakaowork' }
-  insertMessage(msg)
+  await insertMessage(msg)
   broadcast(msg)
 
   res.json({ ok: true, id: msg.id })

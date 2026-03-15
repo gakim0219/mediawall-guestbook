@@ -3,3 +3,4 @@ dist/
 .env
 messages.db
 *.log
+*-adminsdk-*.json

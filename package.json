@@ -13,10 +13,10 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.0.0",
-    "better-sqlite3": "^11.0.0",
     "concurrently": "^8.2.2",
     "cors": "^2.8.5",
     "express": "^4.19.2",
+    "firebase-admin": "^13.7.0",
     "lucide-react": "^0.400.0",
     "qrcode.react": "^4.2.0",
     "react": "^19.0.0",

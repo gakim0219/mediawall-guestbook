@@ -27,7 +27,7 @@ export function useMessages() {
 
       // 히스토리 + 총 개수 병렬 로드
       Promise.all([
-        fetch(`${API_BASE}/api/messages?limit=20`).then((r) => r.json()).catch(() => null),
+        fetch(`${API_BASE}/api/messages?limit=${MAX_MESSAGES}`).then((r) => r.json()).catch(() => null),
         fetch(`${API_BASE}/api/messages/count`).then((r) => r.json()).catch(() => null),
       ]).then(([data, countData]) => {
         if (countData?.count != null) setTotalCount(countData.count)
@@ -45,7 +45,7 @@ export function useMessages() {
     socket.on('connect', () => {
       setConnected(true)
       if (lastTimestampRef.current) {
-        fetch(`${API_BASE}/api/messages?after=${encodeURIComponent(lastTimestampRef.current)}&limit=20`)
+        fetch(`${API_BASE}/api/messages?after=${encodeURIComponent(lastTimestampRef.current)}&limit=${MAX_MESSAGES}`)
           .then((r) => r.json())
           .then((data) => {
             if (Array.isArray(data) && data.length > 0) {

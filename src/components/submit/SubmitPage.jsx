@@ -14,26 +14,46 @@ export default function SubmitPage() {
     if (!senderName.trim() || !text.trim()) return
     setLoading(true)
     setError(null)
-    try {
-      const res = await fetch(`${API_BASE}/api/messages/ingest`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Ingest-Token': 'dev-token',
-        },
-        body: JSON.stringify({ senderName: senderName.trim(), text: text.trim() }),
-      })
-      if (res.ok) {
-        setStep('success')
-      } else {
-        const err = await res.json()
+
+    const MAX_RETRIES = 3
+    const body = JSON.stringify({ senderName: senderName.trim(), text: text.trim() })
+
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      try {
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(), 10000)
+
+        const res = await fetch(`${API_BASE}/api/messages/ingest`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body,
+          signal: controller.signal,
+        })
+        clearTimeout(timeout)
+
+        if (res.ok) {
+          setStep('success')
+          setLoading(false)
+          return
+        }
+        if (res.status === 429) {
+          // rate limited — 잠시 후 재시도
+          await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)))
+          continue
+        }
+        const err = await res.json().catch(() => ({}))
         setError(err.error || '전송에 실패했습니다. 다시 시도해주세요.')
+        setLoading(false)
+        return
+      } catch {
+        if (attempt < MAX_RETRIES - 1) {
+          await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)))
+          continue
+        }
+        setError('서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.')
       }
-    } catch {
-      setError('서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.')
-    } finally {
-      setLoading(false)
     }
+    setLoading(false)
   }
 
   const base = {

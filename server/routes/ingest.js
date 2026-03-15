@@ -1,16 +1,17 @@
 import { Router } from 'express'
 import { v4 as uuidv4 } from 'uuid'
-import { insertMessage } from '../db.js'
+import { insertMessages } from '../db.js'
 import { broadcast } from '../socket.js'
 
 const router = Router()
 const INGEST_TOKEN = process.env.INGEST_TOKEN || 'dev-token'
 
-// ── 메시지 큐 ────────────────────────────────────────────
+// ── 배치 메시지 큐 ──────────────────────────────────────────
 const queue = []
-let processing = false
-const PROCESS_INTERVAL = 50   // ms between processing each message (~20 msgs/sec)
-const MAX_QUEUE_SIZE = 1000   // 큐 최대 길이
+let flushTimer = null
+const FLUSH_INTERVAL = 200  // 200ms마다 큐 비우기
+const MAX_QUEUE_SIZE = 2000 // 큐 최대 길이
+const BATCH_SIZE = 50       // 한번에 최대 50건 배치 쓰기
 
 function enqueue(msg) {
   if (queue.length >= MAX_QUEUE_SIZE) {
@@ -18,30 +19,36 @@ function enqueue(msg) {
     return false
   }
   queue.push(msg)
-  if (!processing) processNext()
+  // 즉시 브로드캐스트 (DB 저장과 무관하게 Wall에 바로 표시)
+  broadcast(msg)
+  // 플러시 타이머 시작
+  if (!flushTimer) scheduleFlush()
   return true
 }
 
-async function processNext() {
-  if (queue.length === 0) {
-    processing = false
-    return
-  }
-  processing = true
-  const msg = queue.shift()
-  try {
-    await insertMessage(msg)
-    broadcast(msg)
-  } catch (err) {
-    console.error('Failed to process message:', err)
-  }
-  setTimeout(processNext, PROCESS_INTERVAL)
+function scheduleFlush() {
+  flushTimer = setTimeout(flushQueue, FLUSH_INTERVAL)
 }
 
-// ── IP Rate Limiting (10초당 3건) ─────────────────────────
+async function flushQueue() {
+  flushTimer = null
+  if (queue.length === 0) return
+
+  const batch = queue.splice(0, BATCH_SIZE)
+  try {
+    await insertMessages(batch)
+  } catch (err) {
+    console.error(`Failed to flush ${batch.length} messages:`, err)
+  }
+
+  // 아직 큐에 남아있으면 다음 플러시 예약
+  if (queue.length > 0) scheduleFlush()
+}
+
+// ── Rate Limiting (초당 2건 per IP — 행사장 공유 WiFi 대응) ──
 const rateMap = new Map()
-const RATE_WINDOW = 10000 // 10초
-const RATE_LIMIT = 3      // 윈도우당 최대 요청 수
+const RATE_WINDOW = 5000  // 5초
+const RATE_LIMIT = 10     // 5초당 10건 (초당 2건)
 
 function isRateLimited(ip) {
   const now = Date.now()
@@ -61,6 +68,13 @@ setInterval(() => {
     if (now - record.windowStart > RATE_WINDOW * 2) rateMap.delete(ip)
   }
 }, 300000)
+
+// ── 큐 모니터링 (30초마다) ───────────────────────────────────
+setInterval(() => {
+  if (queue.length > 0) {
+    console.log(`[Ingest] Queue depth: ${queue.length}/${MAX_QUEUE_SIZE}`)
+  }
+}, 30000)
 
 // ──────────────────────────────────────────────────────────
 

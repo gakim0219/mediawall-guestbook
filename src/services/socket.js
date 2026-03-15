@@ -8,6 +8,10 @@ export function getSocket() {
   if (!socket) {
     socket = io(SOCKET_URL + '/wall', {
       transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionDelay: 500,
+      reconnectionDelayMax: 3000,
+      reconnectionAttempts: Infinity,
     })
   }
   return socket

@@ -4,7 +4,7 @@ import { insertMessages } from '../db.js'
 import { broadcast } from '../socket.js'
 
 const router = Router()
-const INGEST_TOKEN = process.env.INGEST_TOKEN || 'dev-token'
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'admin-secret'
 
 // ── 배치 메시지 큐 ──────────────────────────────────────────
 const queue = []
@@ -82,11 +82,6 @@ router.post('/', (req, res) => {
   const clientIp = req.ip || req.connection.remoteAddress
   if (isRateLimited(clientIp)) {
     return res.status(429).json({ error: 'Too many requests, please wait' })
-  }
-
-  const token = req.headers['x-ingest-token']
-  if (token !== INGEST_TOKEN && process.env.NODE_ENV === 'production') {
-    return res.status(401).json({ error: 'Unauthorized' })
   }
 
   const { senderName, text, avatarUrl } = req.body

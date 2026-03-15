@@ -1,9 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { getSocket } from '../../services/socket.js'
 
-const INGEST_TOKEN = 'dev-token'
 const API_BASE = import.meta.env.VITE_API_URL || ''
-const ADMIN_PASSWORD = 'HD12345'
 
 function useWindowWidth() {
   const [width, setWidth] = useState(window.innerWidth)
@@ -197,15 +195,30 @@ function MessageRow({ msg, onDelete, isNew }) {
 function PasswordGate({ onAuth }) {
   const [password, setPassword] = useState('')
   const [error, setError] = useState(false)
+  const [loading, setLoading] = useState(false)
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
-    if (password === ADMIN_PASSWORD) {
-      sessionStorage.setItem('admin_auth', 'true')
-      onAuth()
-    } else {
+    setLoading(true)
+    setError(false)
+    try {
+      const res = await fetch(`${API_BASE}/api/messages/admin/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      })
+      if (res.ok) {
+        const { token } = await res.json()
+        sessionStorage.setItem('admin_token', token)
+        onAuth()
+      } else {
+        setError(true)
+        setPassword('')
+      }
+    } catch {
       setError(true)
-      setPassword('')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -283,7 +296,7 @@ function PasswordGate({ onAuth }) {
 // ── 메인 컴포넌트 ─────────────────────────────────────────
 export default function AdminForm() {
   const [isAuthenticated, setIsAuthenticated] = useState(
-    () => sessionStorage.getItem('admin_auth') === 'true'
+    () => !!sessionStorage.getItem('admin_token')
   )
   const [senderName, setSenderName] = useState('')
   const [text, setText] = useState('')
@@ -369,6 +382,8 @@ export default function AdminForm() {
     return <PasswordGate onAuth={() => setIsAuthenticated(true)} />
   }
 
+  const adminToken = sessionStorage.getItem('admin_token') || ''
+
   async function handleSubmit(e) {
     e.preventDefault()
     if (!senderName.trim() || !text.trim()) return
@@ -377,7 +392,7 @@ export default function AdminForm() {
     try {
       const res = await fetch(`${API_BASE}/api/messages/ingest`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Ingest-Token': INGEST_TOKEN },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ senderName: senderName.trim(), text: text.trim() }),
       })
       if (res.ok) {
@@ -399,7 +414,7 @@ export default function AdminForm() {
     try {
       await fetch(`${API_BASE}/api/messages/${id}`, {
         method: 'DELETE',
-        headers: { 'X-Ingest-Token': INGEST_TOKEN },
+        headers: { 'X-Admin-Token': adminToken },
       })
     } catch {
       alert('삭제 실패')
@@ -410,7 +425,7 @@ export default function AdminForm() {
     try {
       await fetch(`${API_BASE}/api/messages/all`, {
         method: 'DELETE',
-        headers: { 'X-Ingest-Token': INGEST_TOKEN },
+        headers: { 'X-Admin-Token': adminToken },
       })
     } catch {
       alert('전체 삭제 실패')

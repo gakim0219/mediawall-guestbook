@@ -310,8 +310,7 @@ export default function AdminForm() {
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data)) {
-          const sorted = data.reverse()
-          setMessages(sorted)
+          setMessages(data)
           if (data.length < PAGE_SIZE) setHasMore(false)
         }
       })
@@ -329,7 +328,7 @@ export default function AdminForm() {
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
-          setMessages((prev) => [...prev, ...data.reverse()])
+          setMessages((prev) => [...prev, ...data])
           if (data.length < PAGE_SIZE) setHasMore(false)
         } else {
           setHasMore(false)

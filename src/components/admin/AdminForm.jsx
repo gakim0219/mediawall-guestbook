@@ -344,7 +344,11 @@ export default function AdminForm() {
     if (!isAuthenticated) return
     loadMessages()
     const socket = getSocket()
-    socket.on('connect', () => setConnected(true))
+    socket.on('connect', () => {
+      setConnected(true)
+      // 재연결 시 최신 데이터로 갱신
+      loadMessages()
+    })
     socket.on('disconnect', () => setConnected(false))
     socket.on('new_message', (msg) => {
       setMessages((prev) => [msg, ...prev])

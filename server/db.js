@@ -54,8 +54,8 @@ export async function deleteAllMessages() {
 }
 
 export async function getCount() {
-  const snapshot = await db.collection(COLLECTION).count().get()
-  return snapshot.data().count
+  const snapshot = await db.collection(COLLECTION).get()
+  return snapshot.size
 }
 
 export async function getMessages({ limit = 50, offset = 0, after } = {}) {

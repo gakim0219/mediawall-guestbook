@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { getMessages, getCount, deleteMessage, deleteAllMessages } from '../db.js'
-import { broadcastDelete, broadcastDeleteAll } from '../socket.js'
+import { broadcastDelete, broadcastDeleteAll, broadcastRefresh } from '../socket.js'
 
 const router = Router()
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'admin-secret'
@@ -42,6 +42,11 @@ router.get('/', async (req, res) => {
 
 // ── Admin 로그인 (비밀번호 검증) ────────────────────────────
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'HD12345'
+
+router.post('/admin/refresh-wall', requireAdmin, (req, res) => {
+  broadcastRefresh()
+  res.json({ ok: true })
+})
 
 router.post('/admin/login', (req, res) => {
   const { password } = req.body

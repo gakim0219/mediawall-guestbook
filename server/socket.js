@@ -48,3 +48,9 @@ export function broadcastDeleteAll() {
     _io.of('/wall').emit('all_messages_deleted')
   }
 }
+
+export function broadcastRefresh() {
+  if (_io) {
+    _io.of('/wall').emit('refresh')
+  }
+}

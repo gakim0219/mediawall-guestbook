@@ -81,12 +81,17 @@ export function useMessages() {
       setTotalCount(0)
     })
 
+    socket.on('refresh', () => {
+      window.location.reload()
+    })
+
     return () => {
       socket.off('connect')
       socket.off('disconnect')
       socket.off('new_message')
       socket.off('message_deleted')
       socket.off('all_messages_deleted')
+      socket.off('refresh')
     }
   }, [])
 

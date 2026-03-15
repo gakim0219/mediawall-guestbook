@@ -609,6 +609,23 @@ export default function AdminForm() {
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 16 }}>
+          <button
+            onClick={async () => {
+              try {
+                await fetch(`${API_BASE}/api/messages/admin/refresh-wall`, {
+                  method: 'POST',
+                  headers: { 'X-Admin-Token': adminToken },
+                })
+              } catch {}
+            }}
+            style={{
+              padding: '6px 14px', borderRadius: 8,
+              border: '1px solid rgba(59,130,246,0.3)',
+              background: 'rgba(59,130,246,0.08)', color: 'rgba(59,130,246,0.8)',
+              fontSize: 13, cursor: 'pointer',
+              fontFamily: "'Noto Sans KR', sans-serif",
+            }}
+          >Wall 새로고침</button>
           <DeleteAllButton onConfirm={handleDeleteAll} count={totalCount} />
           {!isMobile && (
             <a href="/wall" target="_blank" style={{

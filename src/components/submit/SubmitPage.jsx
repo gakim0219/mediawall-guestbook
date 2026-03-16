@@ -228,7 +228,7 @@ export default function SubmitPage() {
               <textarea
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                placeholder="도전과 개척의 정신, 정주영 회장님을 기억합니다."
+                placeholder="도전과 개척의 정신, 정주영 창업자님을 기억합니다."
                 maxLength={65}
                 required
                 rows={5}

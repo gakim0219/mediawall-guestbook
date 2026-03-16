@@ -29,7 +29,7 @@ export default function TitleOverlay({ totalCount = 0 }) {
         <div style={{
           fontFamily: "'HyundaiSans', 'Noto Sans KR', sans-serif",
           fontWeight: 700,
-          fontSize: 52,
+          fontSize: 68,
           letterSpacing: '0.1em',
           color: '#FFFFFF',
           lineHeight: 1.3,
@@ -40,7 +40,7 @@ export default function TitleOverlay({ totalCount = 0 }) {
         <div style={{
           fontFamily: "'HyundaiSans', 'Noto Sans KR', sans-serif",
           fontWeight: 500,
-          fontSize: 32,
+          fontSize: 44,
           letterSpacing: '0.15em',
           color: 'rgba(200,220,240,0.8)',
           marginTop: 8,
@@ -93,7 +93,7 @@ export default function TitleOverlay({ totalCount = 0 }) {
 
         {/* QR 코드 */}
         {submitUrl && (
-          <div style={{ marginTop: 32, display: 'flex', alignItems: 'flex-start', gap: 20 }}>
+          <div style={{ marginTop: 40, display: 'flex', alignItems: 'flex-start', gap: 20 }}>
             <div style={{
               background: '#fff',
               borderRadius: 16,
@@ -112,10 +112,10 @@ export default function TitleOverlay({ totalCount = 0 }) {
             <div style={{ paddingTop: 8 }}>
               <div style={{
                 color: '#FFFFFF',
-                fontSize: 20,
+                fontSize: 28,
                 fontWeight: 700,
                 fontFamily: "'Noto Sans KR', sans-serif",
-                marginBottom: 8,
+                marginBottom: 10,
                 letterSpacing: '0.05em',
               }}>
                 추모 메시지 남기기

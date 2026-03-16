@@ -64,12 +64,12 @@ export default function TitleOverlay({ totalCount = 0 }) {
           width: 120,
           height: 1,
           background: 'linear-gradient(to right, rgba(255,255,255,0.3), transparent)',
-          margin: '20px 0 0',
+          margin: '32px 0 0',
         }} />
 
         {/* 누적 메시지 건수 */}
         <div style={{
-          marginTop: 24,
+          marginTop: 36,
           display: 'inline-block',
           background: 'rgba(255,255,255,0.13)',
           borderRadius: 14,
@@ -93,7 +93,7 @@ export default function TitleOverlay({ totalCount = 0 }) {
 
         {/* QR 코드 */}
         {submitUrl && (
-          <div style={{ marginTop: 40, display: 'flex', alignItems: 'flex-start', gap: 20 }}>
+          <div style={{ marginTop: 48, display: 'flex', alignItems: 'flex-start', gap: 20 }}>
             <div style={{
               background: '#fff',
               borderRadius: 16,
@@ -112,7 +112,7 @@ export default function TitleOverlay({ totalCount = 0 }) {
             <div style={{ paddingTop: 8 }}>
               <div style={{
                 color: '#FFFFFF',
-                fontSize: 28,
+                fontSize: 34,
                 fontWeight: 700,
                 fontFamily: "'Noto Sans KR', sans-serif",
                 marginBottom: 10,

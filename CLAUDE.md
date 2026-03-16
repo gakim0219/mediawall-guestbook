@@ -44,6 +44,10 @@ For moderation-related features, always involve the `moderator` agent alongside 
 - **Media Storage**: Local / S3 / Cloudinary
 - **Deployment**: Local LAN / Cloud
 
+## 작업 기록
+- `docs/work-log.md`에 세션별 작업 내역이 기록되어 있음. 새 세션 시작 시 반드시 읽고 현재 상황을 파악할 것.
+- 세션 종료 시 작업 내용을 해당 파일에 추가하고 git push할 것.
+
 ## Code Conventions
 - All secrets in `.env` — never hardcoded
 - Validate all user input at system boundaries

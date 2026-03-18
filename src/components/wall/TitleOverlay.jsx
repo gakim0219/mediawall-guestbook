@@ -147,6 +147,25 @@ export default function TitleOverlay({ totalCount = 0, wallW = 2048 }) {
         )}
       </div>
 
+      {/* 우측 상단 HD 로고 */}
+      <div style={{
+        position: 'absolute',
+        top: 48,
+        right: 64,
+        zIndex: 10,
+      }}>
+        <img
+          src="/HD_LOGO_CI.png"
+          alt="HD Logo"
+          style={{
+            height: 80,
+            width: 'auto',
+            opacity: 0.85,
+            filter: 'drop-shadow(0 2px 12px rgba(0,0,0,0.5))',
+          }}
+        />
+      </div>
+
 {/* 하단 바 */}
       <div style={{
         position: 'absolute',

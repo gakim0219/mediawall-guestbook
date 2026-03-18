@@ -6,11 +6,11 @@ function formatTime(iso) {
   }
 }
 
-const BUBBLE_W = 576
-const BUBBLE_H = 264
+const REF_W = 576
 
-export default function MessageBubble({ message, x, y, floatDuration, floatDelay, entering, exiting, isNew }) {
+export default function MessageBubble({ message, x, y, bubbleW = 576, bubbleH = 264, floatDuration, floatDelay, entering, exiting, isNew }) {
   const { senderName, text, timestamp } = message
+  const fs = bubbleW / REF_W  // font scale factor
 
   const animClass = entering ? 'bubble-enter' : exiting ? 'bubble-exit' : 'bubble-float'
 
@@ -19,15 +19,15 @@ export default function MessageBubble({ message, x, y, floatDuration, floatDelay
       className={animClass}
       style={{
         position: 'absolute',
-        left: x - BUBBLE_W / 2,
-        top: y - BUBBLE_H / 2,
-        width: BUBBLE_W,
+        left: x - bubbleW / 2,
+        top: y - bubbleH / 2,
+        width: bubbleW,
         background: 'rgba(255,255,255,0.25)',
         backdropFilter: 'blur(14px)',
         WebkitBackdropFilter: 'blur(14px)',
         border: isNew ? '1px solid rgba(100,200,255,0.6)' : '1px solid rgba(255,255,255,0.35)',
         borderRadius: 18,
-        padding: '22px 29px',
+        padding: `${Math.round(22 * fs)}px ${Math.round(29 * fs)}px`,
         display: 'flex',
         flexDirection: 'column',
         gap: 8,
@@ -39,7 +39,7 @@ export default function MessageBubble({ message, x, y, floatDuration, floatDelay
     >
       <div style={{
         color: '#FFFFFF',
-        fontSize: 34,
+        fontSize: Math.round(34 * fs),
         fontWeight: 700,
         fontFamily: "'Noto Sans KR', sans-serif",
         whiteSpace: 'nowrap',
@@ -50,7 +50,7 @@ export default function MessageBubble({ message, x, y, floatDuration, floatDelay
       </div>
       <div style={{
         color: '#E0E8F0',
-        fontSize: 29,
+        fontSize: Math.round(29 * fs),
         fontFamily: "'Noto Sans KR', sans-serif",
         fontWeight: 400,
         lineHeight: 1.55,
@@ -61,7 +61,7 @@ export default function MessageBubble({ message, x, y, floatDuration, floatDelay
       }}>
         {text}
       </div>
-      <div style={{ color: '#94A3B8', fontSize: 22, fontFamily: "'Noto Sans KR', sans-serif", marginTop: 2 }}>
+      <div style={{ color: '#94A3B8', fontSize: Math.round(22 * fs), fontFamily: "'Noto Sans KR', sans-serif", marginTop: 2 }}>
         {formatTime(timestamp)}
       </div>
     </div>

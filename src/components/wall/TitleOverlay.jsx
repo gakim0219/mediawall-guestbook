@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 
-export default function TitleOverlay({ totalCount = 0 }) {
+export default function TitleOverlay({ totalCount = 0, wallW = 2048 }) {
   const [submitUrl, setSubmitUrl] = useState('')
 
   useEffect(() => {
@@ -15,6 +15,8 @@ export default function TitleOverlay({ totalCount = 0 }) {
     day: 'numeric',
   })
 
+  const titleScale = Math.min(1, wallW / 2400)
+
   return (
     <>
       {/* 좌상단 타이틀 + 티커 + QR */}
@@ -24,6 +26,8 @@ export default function TitleOverlay({ totalCount = 0 }) {
         left: 64,
         zIndex: 10,
         width: 760,
+        transform: `scale(${titleScale})`,
+        transformOrigin: 'top left',
       }}>
         {/* 타이틀 */}
         <div style={{

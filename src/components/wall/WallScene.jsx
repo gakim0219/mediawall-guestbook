@@ -8,25 +8,29 @@ if (typeof document !== 'undefined') {
   document.body.style.overflow = 'hidden'
 }
 
-const WALL_W = 6016
 const WALL_H = 1152
 
 export default function WallScene() {
   const { messages, connected, totalCount } = useMessages()
+  const [wallW, setWallW] = useState(() =>
+    typeof window !== 'undefined'
+      ? Math.round(WALL_H * (window.innerWidth / window.innerHeight))
+      : 2048
+  )
   const [scale, setScale] = useState(1)
   const [flash, setFlash] = useState(false)
   const prevCountRef = useRef(0)
 
-  // Auto-scale to fit viewport
+  // Auto-scale: 캔버스 너비를 뷰포트 비율에 맞춰 동적 계산
   useEffect(() => {
-    function updateScale() {
-      const scaleX = window.innerWidth / WALL_W
-      const scaleY = window.innerHeight / WALL_H
-      setScale(Math.min(scaleX, scaleY))
+    function updateDims() {
+      const ar = window.innerWidth / window.innerHeight
+      setWallW(Math.round(WALL_H * ar))
+      setScale(window.innerHeight / WALL_H)
     }
-    updateScale()
-    window.addEventListener('resize', updateScale)
-    return () => window.removeEventListener('resize', updateScale)
+    updateDims()
+    window.addEventListener('resize', updateDims)
+    return () => window.removeEventListener('resize', updateDims)
   }, [])
 
   // Flash on new incoming message (not on initial load)
@@ -55,7 +59,7 @@ export default function WallScene() {
       <div
         className="wall-container"
         style={{
-          width: WALL_W,
+          width: wallW,
           height: WALL_H,
           position: 'relative',
           overflow: 'hidden',
@@ -79,8 +83,8 @@ export default function WallScene() {
           />
         )}
 
-        <TitleOverlay totalCount={totalCount} />
-        <BubbleCanvas messages={messages} />
+        <TitleOverlay totalCount={totalCount} wallW={wallW} />
+        <BubbleCanvas messages={messages} wallW={wallW} />
 
         {/* Connection indicator */}
         <div

@@ -1,86 +1,61 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 
-// ── 캔버스 치수 ──────────────────────────────────────────
-const WALL_W = 6016
+// ── 캔버스 높이 (기준값, 너비는 뷰포트 비율에 따라 동적) ──
 const WALL_H = 1152
-
-// ── 그리드 (촘촘하게 분할하여 다양한 위치에 배치) ──────────
-const COLS = 14
-const ROWS = 4
-const ZONE_W = WALL_W / COLS   // ~430
-const ZONE_H = WALL_H / ROWS   // 288
-
-// ── 버블 실제 치수 (MessageBubble.jsx와 일치) ─────────────
-const BUBBLE_W = 576
-const BUBBLE_H = 264
 
 // ── 안전 여백 ─────────────────────────────────────────────
 const TOP_PAD     = 24
 const BOTTOM_PAD  = 56 + 24   // 하단 바 + 여백
 
-// ── 좌측 경계 (타이틀 패널 오른쪽 끝) ───────────────────
-const LEFT_BOUND = 824
-
-// ── 우측 경계 (배경 이미지 로고 영역 제외) ───────────────
-const RIGHT_LOGO_W = 300
-const RIGHT_BOUND = WALL_W - RIGHT_LOGO_W  // 5716
-
-// ── 타이틀/초상 영역: 좌측 경계 이내 컬럼 제외 ─────────────
-function isExcluded(col) {
-  const zoneRight = (col + 1) * ZONE_W
-  if (zoneRight <= LEFT_BOUND) return true
-  const zoneLeft = col * ZONE_W
-  if (zoneLeft >= WALL_W - RIGHT_LOGO_W) return true
-  return false
-}
-
-// ── 겹침 허용: 버블 면적의 ~20%까지 겹쳐도 페널티 없음 ────
-// 끝부분이 자연스럽게 겹치되, 본문 텍스트가 가려지지 않는 수준
-const OVERLAP_TOLERANCE = 100
-
-// ── 최대 동시 표시 개수 ────────────────────────────────────
-const MAX_VISIBLE = 30
+// ── 겹침 허용 ─────────────────────────────────────────────
+const OVERLAP_TOLERANCE = 80
 
 // ── 퇴장 애니메이션 시간 ──────────────────────────────────
 const EXIT_DURATION = 1500
 
-// ─────────────────────────────────────────────────────────
+// ── 뷰포트 너비에 따른 동적 치수 계산 ────────────────────
+function computeDims(wallW) {
+  const titleScale = Math.min(1, wallW / 2400)
+  const leftBound  = Math.round(824 * titleScale + 40)
+  const rightBound = wallW - 60
 
-function getBBox(x, y) {
-  return {
-    x1: x - BUBBLE_W / 2,
-    y1: y - BUBBLE_H / 2,
-    x2: x + BUBBLE_W / 2,
-    y2: y + BUBBLE_H / 2,
-  }
+  const availableW = rightBound - leftBound
+  const bubbleW = Math.round(Math.min(576, Math.max(300, wallW * 0.195)))
+  const bubbleH = Math.round(bubbleW * 264 / 576)
+
+  const availableArea = availableW * (WALL_H - TOP_PAD - BOTTOM_PAD)
+  const bubbleArea    = bubbleW * bubbleH
+  const maxVisible    = Math.min(30, Math.max(6, Math.floor(availableArea / bubbleArea * 0.6)))
+
+  return { leftBound, rightBound, bubbleW, bubbleH, maxVisible }
 }
 
-function clamp(x, y) {
-  const left  = x - BUBBLE_W / 2
-  const right = x + BUBBLE_W / 2
-  const top   = y - BUBBLE_H / 2
-  const bot   = y + BUBBLE_H / 2
+// ─────────────────────────────────────────────────────────
 
+function getBBox(x, y, bw, bh) {
+  return { x1: x - bw / 2, y1: y - bh / 2, x2: x + bw / 2, y2: y + bh / 2 }
+}
+
+function clamp(x, y, dims) {
+  const { leftBound, rightBound, bubbleW, bubbleH } = dims
   let dx = 0, dy = 0
-  if (left  < LEFT_BOUND)          dx = LEFT_BOUND - left
-  if (right > RIGHT_BOUND)         dx = RIGHT_BOUND - right
-  if (top   < TOP_PAD)             dy = TOP_PAD - top
-  if (bot   > WALL_H - BOTTOM_PAD) dy = (WALL_H - BOTTOM_PAD) - bot
+
+  const left  = x - bubbleW / 2
+  const right = x + bubbleW / 2
+  const top   = y - bubbleH / 2
+  const bot   = y + bubbleH / 2
+
+  if (left  < leftBound)             dx = leftBound - left
+  if (right > rightBound)            dx = rightBound - right
+  if (top   < TOP_PAD)               dy = TOP_PAD - top
+  if (bot   > WALL_H - BOTTOM_PAD)   dy = (WALL_H - BOTTOM_PAD) - bot
 
   return { x: x + dx, y: y + dy }
 }
 
-/**
- * OVERLAP_TOLERANCE만큼 박스를 축소한 뒤 겹침 면적 계산.
- * → 끝부분 겹침은 허용, 깊이 겹침만 페널티.
- */
 function overlapArea(a, boxes) {
-  const inner = {
-    x1: a.x1 + OVERLAP_TOLERANCE,
-    y1: a.y1 + OVERLAP_TOLERANCE,
-    x2: a.x2 - OVERLAP_TOLERANCE,
-    y2: a.y2 - OVERLAP_TOLERANCE,
-  }
+  const t = OVERLAP_TOLERANCE
+  const inner = { x1: a.x1 + t, y1: a.y1 + t, x2: a.x2 - t, y2: a.y2 - t }
   if (inner.x2 <= inner.x1 || inner.y2 <= inner.y1) return 0
 
   return boxes.reduce((sum, b) => {
@@ -90,21 +65,17 @@ function overlapArea(a, boxes) {
   }, 0)
 }
 
-/**
- * 전체 배치 가능 영역에서 겹침이 가장 적은 위치를 찾는다.
- * 존 제한 없이 랜덤 샘플링 → 빽빽하면서도 텍스트는 읽히는 배치.
- */
-function findBestPosition(existingBoxes) {
+function findBestPosition(existingBoxes, dims) {
+  const { leftBound, rightBound, bubbleW, bubbleH } = dims
   const MAX_TRIES = 40
   let best = null
   let bestArea = Infinity
 
   for (let i = 0; i < MAX_TRIES; i++) {
-    // 유효 영역 내 완전 랜덤 위치
-    const rawX = LEFT_BOUND + BUBBLE_W / 2 + Math.random() * (RIGHT_BOUND - LEFT_BOUND - BUBBLE_W)
-    const rawY = TOP_PAD + BUBBLE_H / 2 + Math.random() * (WALL_H - TOP_PAD - BOTTOM_PAD - BUBBLE_H)
-    const { x, y } = clamp(rawX, rawY)
-    const box = getBBox(x, y)
+    const rawX = leftBound + bubbleW / 2 + Math.random() * (rightBound - leftBound - bubbleW)
+    const rawY = TOP_PAD + bubbleH / 2 + Math.random() * (WALL_H - TOP_PAD - BOTTOM_PAD - bubbleH)
+    const { x, y } = clamp(rawX, rawY, dims)
+    const box = getBBox(x, y, bubbleW, bubbleH)
     const area = overlapArea(box, existingBoxes)
     if (area === 0) return { x, y, box }
     if (area < bestArea) { bestArea = area; best = { x, y, box } }
@@ -115,7 +86,11 @@ function findBestPosition(existingBoxes) {
 
 // ─────────────────────────────────────────────────────────
 
-export function useBubbleLayout(messages) {
+export function useBubbleLayout(messages, wallW = 2048) {
+  const dims = useMemo(() => computeDims(wallW), [wallW])
+  const dimsRef = useRef(dims)
+  useEffect(() => { dimsRef.current = dims }, [dims])
+
   const [bubbles, setBubbles] = useState([])
   const bubblesRef     = useRef([])
   const bubbleBoxes    = useRef(new Map())   // id → bbox
@@ -148,12 +123,13 @@ export function useBubbleLayout(messages) {
 
   // ── 배치 ─────────────────────────────────────────────────
   const assignBubble = useCallback((msg) => {
-    if (activeCount.current >= MAX_VISIBLE) {
+    const d = dimsRef.current
+    if (activeCount.current >= d.maxVisible) {
       evictOldest()
     }
 
     const existingBoxes = Array.from(bubbleBoxes.current.values())
-    const pos = findBestPosition(existingBoxes)
+    const pos = findBestPosition(existingBoxes, d)
     if (!pos) return
 
     bubbleBoxes.current.set(msg.id, pos.box)
@@ -163,6 +139,8 @@ export function useBubbleLayout(messages) {
       ...msg,
       x: pos.x,
       y: pos.y,
+      bubbleW: d.bubbleW,
+      bubbleH: d.bubbleH,
       floatDuration: 6 + Math.random() * 3,
       floatDelay:    Math.random() * -6,
       entering: true,

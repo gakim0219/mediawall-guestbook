@@ -16,18 +16,33 @@ const EXIT_DURATION = 1500
 // ── 뷰포트 너비에 따른 동적 치수 계산 ────────────────────
 function computeDims(wallW) {
   const titleScale = Math.min(1, wallW / 2400)
-  const leftBound  = Math.round(824 * titleScale + 40)
+  const leftBound  = 60
   const rightBound = wallW - 60
 
-  const availableW = rightBound - leftBound
   const bubbleW = Math.round(Math.min(576, Math.max(300, wallW * 0.195)))
   const bubbleH = Math.round(bubbleW * 264 / 576)
 
-  const availableArea = availableW * (WALL_H - TOP_PAD - BOTTOM_PAD)
-  const bubbleArea    = bubbleW * bubbleH
-  const maxVisible    = Math.min(30, Math.max(6, Math.floor(availableArea / bubbleArea * 0.6)))
+  const maxVisible = 30
 
-  return { leftBound, rightBound, bubbleW, bubbleH, maxVisible }
+  // UI 오버레이 금지 영역 (버블이 이 영역과 겹치지 않도록)
+  const exclusionZones = [
+    // 좌상단: 제목 + 부제목 + 날짜 + 카운터 + QR 코드
+    {
+      x1: 0,
+      y1: 0,
+      x2: Math.round(880 * titleScale) + 30,
+      y2: Math.round(740 * titleScale) + 30,
+    },
+    // 우상단: HD 로고
+    {
+      x1: wallW - Math.round(280 * titleScale),
+      y1: 0,
+      x2: wallW,
+      y2: 160,
+    },
+  ]
+
+  return { leftBound, rightBound, bubbleW, bubbleH, maxVisible, exclusionZones }
 }
 
 // ─────────────────────────────────────────────────────────
@@ -65,20 +80,51 @@ function overlapArea(a, boxes) {
   }, 0)
 }
 
+function overlapsExclusion(box, zones) {
+  const pad = 10
+  for (const z of zones) {
+    if (box.x2 > z.x1 + pad && box.x1 < z.x2 - pad &&
+        box.y2 > z.y1 + pad && box.y1 < z.y2 - pad) {
+      return true
+    }
+  }
+  return false
+}
+
+function minDistToBoxes(x, y, boxes) {
+  if (boxes.length === 0) return Infinity
+  let min = Infinity
+  for (const b of boxes) {
+    const d = Math.hypot(x - (b.x1 + b.x2) / 2, y - (b.y1 + b.y2) / 2)
+    if (d < min) min = d
+  }
+  return min
+}
+
 function findBestPosition(existingBoxes, dims) {
-  const { leftBound, rightBound, bubbleW, bubbleH } = dims
-  const MAX_TRIES = 40
+  const { leftBound, rightBound, bubbleW, bubbleH, exclusionZones } = dims
+  const MAX_TRIES = 60
   let best = null
-  let bestArea = Infinity
+  let bestScore = -Infinity
 
   for (let i = 0; i < MAX_TRIES; i++) {
     const rawX = leftBound + bubbleW / 2 + Math.random() * (rightBound - leftBound - bubbleW)
     const rawY = TOP_PAD + bubbleH / 2 + Math.random() * (WALL_H - TOP_PAD - BOTTOM_PAD - bubbleH)
     const { x, y } = clamp(rawX, rawY, dims)
     const box = getBBox(x, y, bubbleW, bubbleH)
-    const area = overlapArea(box, existingBoxes)
-    if (area === 0) return { x, y, box }
-    if (area < bestArea) { bestArea = area; best = { x, y, box } }
+
+    if (overlapsExclusion(box, exclusionZones)) continue
+
+    const overlap = overlapArea(box, existingBoxes)
+    const spread = minDistToBoxes(x, y, existingBoxes)
+
+    // 겹침 없는 후보에 큰 보너스, 그 중에서 기존 버블과 가장 먼 위치 선택
+    const score = (overlap === 0 ? 100000 : 0) - overlap + spread
+
+    if (score > bestScore) {
+      bestScore = score
+      best = { x, y, box }
+    }
   }
 
   return best

@@ -358,11 +358,9 @@ export default function AdminForm() {
     })
     socket.on('message_deleted', ({ id }) => {
       setMessages((prev) => prev.filter((m) => m.id !== id))
-      setTotalCount((n) => Math.max(0, n - 1))
     })
     socket.on('all_messages_deleted', () => {
       setMessages([])
-      setTotalCount(0)
     })
     return () => {
       socket.off('connect'); socket.off('disconnect')

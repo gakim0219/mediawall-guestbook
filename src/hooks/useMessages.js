@@ -72,13 +72,11 @@ export function useMessages() {
     })
 
     socket.on('message_deleted', ({ id }) => {
-      setTotalCount((n) => Math.max(0, n - 1))
       setMessages((prev) => prev.filter((m) => m.id !== id))
     })
 
     socket.on('all_messages_deleted', () => {
       setMessages([])
-      setTotalCount(0)
     })
 
     socket.on('refresh', () => {

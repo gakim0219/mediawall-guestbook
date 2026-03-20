@@ -34,6 +34,7 @@ export async function insertMessage(msg) {
     text: msg.text,
     timestamp: msg.timestamp,
     source: msg.source || 'manual',
+    deleted: false,
   })
   batch.set(COUNTER_REF(), { count: admin.firestore.FieldValue.increment(1) }, { merge: true })
   await batch.commit()
@@ -52,6 +53,7 @@ export async function insertMessages(msgs) {
         text: msg.text,
         timestamp: msg.timestamp,
         source: msg.source || 'manual',
+        deleted: false,
       })
     }
     batch.set(COUNTER_REF(), { count: admin.firestore.FieldValue.increment(chunk.length) }, { merge: true })
@@ -59,24 +61,29 @@ export async function insertMessages(msgs) {
   }
 }
 
-// ── 삭제 ────────────────────────────────────────────────────
+// ── 삭제 (soft delete) ──────────────────────────────────────
 export async function deleteMessage(id) {
   const doc = db.collection(COLLECTION).doc(id)
   const snap = await doc.get()
-  if (!snap.exists) return { changes: 0 }
+  if (!snap.exists || snap.data().deleted === true) return { changes: 0 }
   const batch = db.batch()
-  batch.delete(doc)
+  batch.update(doc, { deleted: true, deletedAt: new Date().toISOString() })
   batch.set(COUNTER_REF(), { count: admin.firestore.FieldValue.increment(-1) }, { merge: true })
   await batch.commit()
   return { changes: 1 }
 }
 
 export async function deleteAllMessages() {
-  const snapshot = await db.collection(COLLECTION).get()
+  const snapshot = await db.collection(COLLECTION)
+    .where('deleted', '==', false)
+    .get()
   const BATCH_LIMIT = 500
   for (let i = 0; i < snapshot.docs.length; i += BATCH_LIMIT) {
     const batch = db.batch()
-    snapshot.docs.slice(i, i + BATCH_LIMIT).forEach((doc) => batch.delete(doc.ref))
+    const deletedAt = new Date().toISOString()
+    snapshot.docs.slice(i, i + BATCH_LIMIT).forEach((doc) =>
+      batch.update(doc.ref, { deleted: true, deletedAt })
+    )
     await batch.commit()
   }
   await COUNTER_REF().set({ count: 0 })
@@ -90,7 +97,7 @@ export async function getCount() {
 }
 
 export async function getMessages({ limit = 50, offset = 0, after } = {}) {
-  let query = db.collection(COLLECTION)
+  let query = db.collection(COLLECTION).where('deleted', '==', false)
 
   if (after) {
     query = query.where('timestamp', '>', after).orderBy('timestamp', 'asc')
@@ -106,4 +113,29 @@ export async function getMessages({ limit = 50, offset = 0, after } = {}) {
 
   const snapshot = await query.get()
   return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+}
+
+// ── 백필: 기존 문서에 deleted 필드 추가 ─────────────────────
+export async function backfillDeletedField() {
+  const BATCH_LIMIT = 500
+  let backfilled = 0
+  let snapshot = await db.collection(COLLECTION).limit(BATCH_LIMIT).get()
+
+  while (!snapshot.empty) {
+    const docsToUpdate = snapshot.docs.filter((doc) => doc.data().deleted === undefined)
+    if (docsToUpdate.length > 0) {
+      const batch = db.batch()
+      docsToUpdate.forEach((doc) => batch.update(doc.ref, { deleted: false }))
+      await batch.commit()
+      backfilled += docsToUpdate.length
+    }
+    const lastDoc = snapshot.docs[snapshot.docs.length - 1]
+    snapshot = await db.collection(COLLECTION).startAfter(lastDoc).limit(BATCH_LIMIT).get()
+  }
+
+  if (backfilled > 0) {
+    console.log(`Backfill complete: added 'deleted: false' to ${backfilled} documents`)
+  } else {
+    console.log('Backfill: all documents already have deleted field')
+  }
 }

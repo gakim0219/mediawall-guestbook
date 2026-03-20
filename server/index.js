@@ -4,7 +4,7 @@ import { Server } from 'socket.io'
 import cors from 'cors'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
-import { initDb } from './db.js'
+import { initDb, backfillDeletedField } from './db.js'
 import { initSocket } from './socket.js'
 import ingestRouter from './routes/ingest.js'
 import messagesRouter from './routes/messages.js'
@@ -29,6 +29,7 @@ app.use(cors())
 app.use(express.json({ limit: '100kb' }))
 
 initDb()
+backfillDeletedField().catch((err) => console.error('Backfill failed:', err))
 initSocket(io)
 
 app.get('/health', (req, res) => res.json({ ok: true, uptime: process.uptime() }))

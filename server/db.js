@@ -66,10 +66,7 @@ export async function deleteMessage(id) {
   const doc = db.collection(COLLECTION).doc(id)
   const snap = await doc.get()
   if (!snap.exists || snap.data().deleted === true) return { changes: 0 }
-  const batch = db.batch()
-  batch.update(doc, { deleted: true, deletedAt: new Date().toISOString() })
-  batch.set(COUNTER_REF(), { count: admin.firestore.FieldValue.increment(-1) }, { merge: true })
-  await batch.commit()
+  await doc.update({ deleted: true, deletedAt: new Date().toISOString() })
   return { changes: 1 }
 }
 
@@ -86,7 +83,6 @@ export async function deleteAllMessages() {
     )
     await batch.commit()
   }
-  await COUNTER_REF().set({ count: 0 })
   return { changes: snapshot.size }
 }
 
